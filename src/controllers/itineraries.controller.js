@@ -21,10 +21,13 @@ exports.getItineraries = async (req, res) => {
   try {
     const { page = 1, limit = 10, destination, sort } = req.query;
     const q = {};
+
     if (destination) q.destination = new RegExp(destination, 'i');
-    q.userId = req.user ? req.user._id : undefined;
-    if (!q.userId) delete q.userId;
+
+    if (req.user?._id) q.userId = req.user._id;
+
     const skip = (page - 1) * limit;
+
     const sortBy = {};
     if (sort) {
       const [field, order = 'asc'] = sort.split(':');
@@ -47,6 +50,7 @@ exports.getItinerary = async (req, res) => {
     const it = await Itinerary.findById(id).lean();
     if (!it) return res.status(404).json({ message: 'Not found' });
     try {
+      //save in cache
       await client.setEx(`itinerary:${id}`, 300, JSON.stringify(it));
     } catch (e) {}
     res.json(it);
