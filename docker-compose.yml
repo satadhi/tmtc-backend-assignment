@@ -1,0 +1,36 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      - mongo
+      - redis
+    ports:
+      - '4000:4000'
+    volumes:
+      - ./:/app
+      - ./logs:/app/logs
+    networks:
+      - tmtc_net
+  mongo:
+    image: mongo:6
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - '27017:27017'
+    networks:
+      - tmtc_net
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    networks:
+      - tmtc_net
+volumes:
+  mongo-data:
+networks:
+  tmtc_net:
+    driver: bridge
