@@ -39,7 +39,7 @@ exports.getItineraries = async (req, res) => {
       Itinerary.find(q).sort(sortBy).skip(Number(skip)).limit(Number(limit)),
       Itinerary.countDocuments(q),
     ]);
-    res.json({ page: Number(page), limit: Number(limit), total, items });
+    res.status(200).json({ page: Number(page), limit: Number(limit), total, items });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

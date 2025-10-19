@@ -160,15 +160,51 @@ router.post('/', auth, createItineraryValidator, itineraries.createItinerary);
  *     tags: [Itineraries]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of itineraries per page
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *           enum: [createdAt, startDate, title]
+ *         description: Field to sort the itineraries by
+ *       - in: query
+ *         name: destination
+ *         schema:
+ *           type: string
+ *         description: Filter itineraries by destination
  *     responses:
  *       200:
- *         description: List of itineraries
+ *         description: List of itineraries with optional pagination, sorting, and filtering
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Itinerary'
+ *               type: object
+ *               properties:
+ *                 page:
+ *                   type: integer
+ *                   example: 1
+ *                 limit:
+ *                   type: integer
+ *                   example: 10
+ *                 total:
+ *                   type: integer
+ *                   example: 42
+ *                 itineraries:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Itinerary'
  */
 router.get('/', auth, itineraries.getItineraries);
 

@@ -4,7 +4,10 @@ const { MongoMemoryServer } = require('mongodb-memory-server');
 
 let mongoServer;
 let app;
+let token;
+
 jest.setTimeout(20000);
+
 beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
   const uri = mongoServer.getUri();
@@ -17,6 +20,15 @@ beforeAll(async () => {
     .post('/api/auth/register')
     .set('Content-Type', 'application/json')
     .send({ email: 't@t.com', password: 'Pass123!' });
+
+  // Login to get token
+  const login = await request(app)
+    .post('/api/auth/login')
+    .set('Content-Type', 'application/json')
+    .send({ email: 't@t.com', password: 'Pass123!' });
+
+  token = login.body.token;
+  expect(token).toBeDefined();
 });
 
 afterAll(async () => {
@@ -26,15 +38,6 @@ afterAll(async () => {
 
 describe('Itineraries CRUD', () => {
   test('create -> get -> update -> delete flow', async () => {
-    // Login to get token
-    const login = await request(app)
-      .post('/api/auth/login')
-      .set('Content-Type', 'application/json')
-      .send({ email: 't@t.com', password: 'Pass123!' });
-
-    const token = login.body.token;
-    expect(token).toBeDefined();
-
     const payload = {
       title: 'Trip',
       destination: 'Paris',
@@ -57,6 +60,7 @@ describe('Itineraries CRUD', () => {
       .get(`/api/itineraries/${id}`)
       .set('Authorization', `Bearer ${token}`);
     expect(get.statusCode).toBe(200);
+    expect(get.body.destination).toBe('Paris');
 
     // Update itinerary
     const upd = await request(app)
@@ -65,11 +69,59 @@ describe('Itineraries CRUD', () => {
       .set('Content-Type', 'application/json')
       .send({ title: 'Updated' });
     expect(upd.statusCode).toBe(200);
+    expect(upd.body.title).toBe('Updated');
 
     // Delete itinerary
     const del = await request(app)
       .delete(`/api/itineraries/${id}`)
       .set('Authorization', `Bearer ${token}`);
     expect(del.statusCode).toBe(200);
+  });
+
+  test('pagination, filtering, and sorting', async () => {
+    // Seed multiple itineraries
+    const destinations = ['Paris', 'Rome', 'Paris', 'Berlin', 'Rome'];
+    for (let i = 0; i < destinations.length; i++) {
+      await request(app)
+        .post('/api/itineraries')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Content-Type', 'application/json')
+        .send({
+          title: `Trip ${i}`,
+          destination: destinations[i],
+          startDate: new Date(Date.now() + i * 86400000).toISOString(),
+          endDate: new Date(Date.now() + (i + 1) * 86400000).toISOString(),
+          activities: [],
+        });
+    }
+
+    // Test pagination (limit=2)
+    const page1 = await request(app)
+      .get('/api/itineraries?page=1&limit=2')
+      .set('Authorization', `Bearer ${token}`);
+    expect(page1.statusCode).toBe(200);
+    expect(page1.body.items.length).toBeLessThanOrEqual(2);
+
+    const page2 = await request(app)
+      .get('/api/itineraries?page=2&limit=2')
+      .set('Authorization', `Bearer ${token}`);
+    expect(page2.statusCode).toBe(200);
+    expect(page2.body.items.length).toBeLessThanOrEqual(2);
+
+    // Test filtering (?destination=Paris)
+    const filtered = await request(app)
+      .get('/api/itineraries?destination=Paris')
+      .set('Authorization', `Bearer ${token}`);
+    expect(filtered.statusCode).toBe(200);
+    expect(filtered.body.items.every((it) => it.destination === 'Paris')).toBe(true);
+
+    // Test sorting (?sort=startDate)
+    const sorted = await request(app)
+      .get('/api/itineraries?sort=startDate')
+      .set('Authorization', `Bearer ${token}`);
+    expect(sorted.statusCode).toBe(200);
+    const dates = sorted.body.items.map((it) => new Date(it.startDate));
+    const isSorted = dates.every((d, i, arr) => !i || arr[i - 1] <= d);
+    expect(isSorted).toBe(true);
   });
 });
