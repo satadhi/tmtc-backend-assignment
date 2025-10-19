@@ -6,8 +6,6 @@ let mongoServer;
 let app;
 let token;
 
-jest.setTimeout(20000);
-
 beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
   const uri = mongoServer.getUri();
