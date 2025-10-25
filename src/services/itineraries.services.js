@@ -88,7 +88,7 @@ exports.deleteItinerary = async (id) => {
 
 exports.getSharedItinerary = async (shareableId) => {
   const itinerary = await Itinerary.findOne({ shareableId }).lean();
-  if (!itinerary) return null;
+  if (!itinerary) throw new AppError('Itinerary not found', 'NotFound');
   const { userId, __v, ...publicIt } = itinerary;
   return publicIt;
 };
