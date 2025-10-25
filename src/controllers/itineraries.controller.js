@@ -24,7 +24,6 @@ exports.getItinerary = async (req, res) => {
     const itinerary = await itineraryService.getItinerary(req.params.id);
     res.json(itinerary);
   } catch (err) {
-    console.log(err);
     handleServiceError(err, res);
   }
 };

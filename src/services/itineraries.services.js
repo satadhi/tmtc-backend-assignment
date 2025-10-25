@@ -46,7 +46,6 @@ exports.getItineraries = async (user, { page = 1, limit = 10, destination, sort 
 
 exports.getItinerary = async (id) => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    console.log('am i geetting here ?');
     throw new AppError('Invalid itinerary ID', 'ValidationError');
   }
 

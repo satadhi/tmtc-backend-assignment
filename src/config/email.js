@@ -9,7 +9,6 @@ const transporter = nodemailer.createTransport({
   auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
 });
 async function sendEmail({ to, subject, html }) {
-  console.log(JSON.stringify({ user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }));
   try {
     if (process.env.NODE_ENV === 'development') {
       console.log('Dont send Mail when testing');

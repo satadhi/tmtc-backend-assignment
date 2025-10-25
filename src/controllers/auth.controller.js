@@ -15,25 +15,6 @@ exports.register = async (req, res) => {
     if (existing) return res.status(409).json({ message: 'Email already used' });
     const user = await User.create({ email, password, name });
     const token = signToken(user);
-
-    // send welcome or verification email
-    const subject = 'Welcome to Our App!';
-    const html = `
-      <div style="font-family: Arial, sans-serif;">
-        <h2>Hi ${name || 'there'},</h2>
-        <p> Welcome to <strong>Our App</strong>!</p>
-        <p>Your account has been created successfully.</p>
-        <p>You can now log in and start exploring.</p>
-        <br />
-        <p style="font-size: 0.9em; color: #666;">If you did not sign up, please ignore this email.</p>
-      </div>
-    `;
-
-    // don’t block response
-    sendEmail({ to: email, subject, html })
-      .then(() => console.log('Welcome email sent to', email))
-      .catch((err) => console.error('Failed to send email:', err.message));
-
     res.status(201).json({ token, user: { id: user._id, email: user.email, name: user.name } });
   } catch (err) {
     res.status(500).json({ message: err.message });

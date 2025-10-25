@@ -1,3 +1,17 @@
+// Mock Redis before anything else
+jest.mock('../config/redisClient', () => ({
+  client: {
+    setEx: jest.fn().mockResolvedValue(null),
+    get: jest.fn().mockResolvedValue(null),
+    del: jest.fn().mockResolvedValue(null),
+  },
+}));
+
+// Mock email sending
+jest.mock('../config/email', () => ({
+  sendEmail: jest.fn().mockResolvedValue(null),
+}));
+
 const request = require('supertest');
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
@@ -69,6 +83,19 @@ describe('Itineraries CRUD', () => {
     expect(upd.statusCode).toBe(200);
     expect(upd.body.title).toBe('Updated');
 
+    // Negative test: get with invalid ID
+    const invalidGet = await request(app)
+      .get('/api/itineraries/invalid-id')
+      .set('Authorization', `Bearer ${token}`);
+    expect(invalidGet.statusCode).toBe(400); // Or 404 depending on your API
+    expect(invalidGet.body.message).toBeDefined();
+
+    const nonExistentGet = await request(app)
+      .get('/api/itineraries/64fc4d92242114c8ea7118ff') // random valid ObjectId format
+      .set('Authorization', `Bearer ${token}`);
+    expect(nonExistentGet.statusCode).toBe(404);
+    expect(nonExistentGet.body.message).toBeDefined();
+
     // Delete itinerary
     const del = await request(app)
       .delete(`/api/itineraries/${id}`)
@@ -115,7 +142,7 @@ describe('Itineraries CRUD', () => {
 
     // Test sorting (?sort=startDate)
     const sorted = await request(app)
-      .get('/api/itineraries?sort=startDate')
+      .get('/api/itineraries?sort=startDate:asc')
       .set('Authorization', `Bearer ${token}`);
     expect(sorted.statusCode).toBe(200);
     const dates = sorted.body.items.map((it) => new Date(it.startDate));
