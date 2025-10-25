@@ -177,13 +177,23 @@ router.post('/', auth, createItineraryValidator, itineraries.createItinerary);
  *         name: sort
  *         schema:
  *           type: string
- *           enum: [createdAt, startDate, title]
- *         description: Field to sort the itineraries by
+ *           enum:
+ *             - createdAt:asc
+ *             - createdAt:desc
+ *             - startDate:asc
+ *             - startDate:desc
+ *             - title:asc
+ *             - title:desc
+ *           default: createdAt:desc
+ *         description: >
+ *           Sort itineraries by field and order.
+ *           Use `:asc` or `:desc` to specify sort order (defaults to `desc` if omitted).
+ *           Example: `createdAt:asc` or `title:desc`
  *       - in: query
  *         name: destination
  *         schema:
  *           type: string
- *         description: Filter itineraries by destination
+ *         description: Filter itineraries by destination (case-insensitive)
  *     responses:
  *       200:
  *         description: List of itineraries with optional pagination, sorting, and filtering

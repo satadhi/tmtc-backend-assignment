@@ -1,4 +1,5 @@
 const itineraryService = require('../services/itineraries.services');
+const handleServiceError = require('../common/handleServiceError');
 
 exports.createItinerary = async (req, res) => {
   try {
@@ -21,10 +22,10 @@ exports.getItineraries = async (req, res) => {
 exports.getItinerary = async (req, res) => {
   try {
     const itinerary = await itineraryService.getItinerary(req.params.id);
-    if (!itinerary) return res.status(404).json({ message: 'Not found' });
     res.json(itinerary);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.log(err);
+    handleServiceError(err, res);
   }
 };
 

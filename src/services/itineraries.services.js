@@ -1,6 +1,8 @@
 const Itinerary = require('../models/Itinerary');
 const { client } = require('../config/redisClient');
 const { sendEmail } = require('../config/email');
+const AppError = require('../common/AppError');
+const mongoose = require('mongoose');
 
 exports.createItinerary = async (user, data) => {
   const itinerary = await Itinerary.create({ ...data, userId: user._id });
@@ -28,7 +30,7 @@ exports.getItineraries = async (user, { page = 1, limit = 10, destination, sort 
 
   const sortBy = {};
   if (sort) {
-    const [field, order = 'asc'] = sort.split(':');
+    const [field, order = 'desc'] = sort.split(':');
     sortBy[field] = order === 'desc' ? -1 : 1;
   } else {
     sortBy.createdAt = -1;
@@ -43,13 +45,20 @@ exports.getItineraries = async (user, { page = 1, limit = 10, destination, sort 
 };
 
 exports.getItinerary = async (id) => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    console.log('am i geetting here ?');
+    throw new AppError('Invalid itinerary ID', 'ValidationError');
+  }
+
   const itinerary = await Itinerary.findById(id).lean();
-  if (itinerary) {
-    try {
-      await client.setEx(`itinerary:${id}`, 300, JSON.stringify(itinerary));
-    } catch (err) {
-      console.error('Redis Cache Error:', err);
-    }
+
+  if (!itinerary) {
+    throw new AppError('Itinerary not found', 'NotFound');
+  }
+  try {
+    await client.setEx(`itinerary:${id}`, 300, JSON.stringify(itinerary));
+  } catch (err) {
+    console.error('Redis Cache Error:', err);
   }
   return itinerary;
 };
